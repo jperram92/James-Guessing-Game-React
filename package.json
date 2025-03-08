@@ -78,7 +78,8 @@
     "tempo-devtools": "^2.0.95",
     "typescript": "^4.9.5",
     "react-scripts": "*",
-    "@testing-library/react": "^12.0.0",
+    "react": "^18.2.0",
+    "@testing-library/react": "^13.0.0",
     "@testing-library/jest-dom": "^5.0.0",
     "vite": "^5.4.14"
   }
