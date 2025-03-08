@@ -36,11 +36,13 @@ jobs:
           echo "Assuming 100% coverage"
           mkdir -p coverage
           echo "100% coverage" > coverage/coverage-summary.txt
-          uses: actions/upload-artifact@v4
-          with:
-            name: test-coverage
-            path: coverage/
-            retention-days: 14
+
+      - name: Upload coverage artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-coverage
+          path: coverage/
+          retention-days: 14
 
   build:
     needs: test
