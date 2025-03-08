@@ -22,21 +22,28 @@ jobs:
         run: |
           npm install --force  # Force resolution of dependencies
           npm install --save-dev @testing-library/react @testing-library/jest-dom react-scripts
-      
+
+      # Simple Test: Test if Jest is working
+      - name: Simple Test to Check Test Functionality
+        run: |
+          echo "module.exports = {}" > simpleTest.js  # Create a simple JavaScript file for testing
+          echo "describe('Simple Test', () => { it('should run without errors', () => { expect(true).toBe(true); }); });" > simpleTest.test.js  # Add simple test to the file
+          npx jest simpleTest.test.js  # Run the simple test
+
       - name: Run Tests
         run: |
           CI=true npm test -- --coverage  # Ensure test command is correct
 
       - name: Upload Test Coverage
         if: always()
-        uses: actions/upload-artifact@v4  # Use the latest version of the upload-artifact action
+        uses: actions/upload-artifact@v4
         with:
           name: test-coverage
           path: coverage/
           retention-days: 14
 
   build:
-    needs: test  # Make sure the build job only runs after tests pass
+    needs: test
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -52,16 +59,15 @@ jobs:
           npm install --force  # Force resolution of dependencies
         
       - name: Build
-        run: CI=true npm run build  # Ensure the build script is defined in your package.json
+        run: CI=true npm run build
     
       - name: Upload Build Artifacts
-        uses: actions/upload-artifact@v4  # Use the latest version of the upload-artifact action
+        uses: actions/upload-artifact@v4
         with:
           name: build-output
           path: build/
           retention-days: 14
 
-  # Optional deployment job (if you want to deploy after build)
   deploy:
     needs: build
     runs-on: ubuntu-latest
