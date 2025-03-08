@@ -6,17 +6,16 @@
     "module": "ESNext",
     "skipLibCheck": true,
     "noEmitOnError": false,
-
-    "moduleResolution": "bundler",
+    "moduleResolution": "node",  // Updated from 'bundler' to 'node'
     "allowImportingTsExtensions": true,
     "resolveJsonModule": true,
     "isolatedModules": true,
     "noEmit": true,
     "jsx": "react-jsx",
-
     "strict": true,
+    "baseUrl": ".",  // Ensure baseUrl is set to resolve paths correctly
     "paths": {
-      "@/*": ["./src/*"]
+      "@/*": ["src/*"]  // Alias for imports
     }
   },
   "include": ["src"],

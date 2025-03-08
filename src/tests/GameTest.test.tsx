@@ -2,6 +2,8 @@ import { useState, useEffect } from "react";
 import { useGame } from "@/context/GameContext";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Word } from "@/types/game"; // Make sure to adjust the import path based on your project structure
+
 
 /**
  * This component is used to test the game functionality.
@@ -18,7 +20,15 @@ export default function GameTest() {
     checkAnswer,
   } = useGame();
 
-  const [testWord, setTestWord] = useState(null);
+  interface Word {
+    id: string;
+    word: string;
+    category: "animals" | "cars";
+    difficulty: 1 | 2 | 3;
+    imageUrl: string;  // Make imageUrl optional
+  }  
+  
+  const [testWord, setTestWord] = useState<Word | null>(null);
   const [testAnswer, setTestAnswer] = useState("");
   const [testResult, setTestResult] = useState<{
     success: boolean;

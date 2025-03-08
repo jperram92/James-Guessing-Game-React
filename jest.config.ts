@@ -1,19 +1,17 @@
 module.exports = {
-  // Jest configuration
   moduleNameMapper: {
-    // Map '@' alias to the 'src' folder
-    "^@/(.*)$": "<rootDir>/src/$1",
+    "^@/(.*)$": "<rootDir>/src/$1",  // This maps '@' to the src directory
   },
-  // Enable Babel transformation for JS/TS files
   transform: {
-    '^.+\\.(js|jsx|ts|tsx)$': 'ts-jest',  // Use ts-jest for TS files
+    '^.+\\.(ts|tsx)$': 'ts-jest',  // Use ts-jest for TypeScript files
+    '^.+\\.(js|jsx|ts|tsx)$': 'babel-jest',
   },
   globals: {
     'ts-jest': {
       tsconfig: {
         jsx: 'react-jsx',
         sourceMap: true,
-        module: 'ESNext',  // Ensure module resolution is ESNext
+        module: 'ESNext',
         target: 'ES2020',
       },
     },
