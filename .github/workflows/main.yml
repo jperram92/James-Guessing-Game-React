@@ -1,4 +1,4 @@
-name: CI/CD with Tests
+name: CI/CD Pipeline
 
 on:
   push:
@@ -7,12 +7,23 @@ on:
     types: [opened, synchronize, reopened]
 
 jobs:
-  test:
+  verify:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+      - name: Check branch protection
+        if: github.event_name == 'pull_request' && github.event.pull_request.user.login != 'jperram92'
+        run: |
+          if [[ "${{ github.event.pull_request.base.ref }}" == "main" ]]; then
+            echo "⚠️ Changes to main branch require approval from @jperram92"
+            exit 1
+          fi
 
+  test:
+    needs: verify
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
@@ -20,27 +31,20 @@ jobs:
           cache: 'npm'
 
       - name: Install Dependencies
-        run: |
-          npm install --force  # Force resolution of dependencies
-          npm install --save-dev @testing-library/react @testing-library/jest-dom react-scripts ts-node  # Install ts-node
+        run: npm install
 
-      # Skip the actual test execution and assume 100% coverage
-      - name: Bypass Test Execution (Assume 100% Coverage)
-        run: |
-          echo "Skipping actual test run, assuming 100% coverage"
+      - name: Run Linting
+        run: npm run lint || echo "Linting issues found"
 
-      - name: Upload Test Coverage (Assumed 100%)
+      - name: Run Tests
+        run: |
+          npm test -- --watchAll=false --coverage --ci --testMatch="**/*.test.{ts,tsx}"
+          
+      - name: Upload Test Results
         if: always()
-        run: |
-          # Assuming 100% coverage is already present in your artifacts
-          echo "Assuming 100% coverage"
-          mkdir -p coverage
-          echo "100% coverage" > coverage/coverage-summary.txt
-
-      - name: Upload coverage artifact
         uses: actions/upload-artifact@v4
         with:
-          name: test-coverage
+          name: test-results
           path: coverage/
           retention-days: 14
 
@@ -48,9 +52,8 @@ jobs:
     needs: test
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
+      - uses: actions/checkout@v4
+      
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
@@ -58,11 +61,10 @@ jobs:
           cache: 'npm'
 
       - name: Install Dependencies
-        run: |
-          npm install --force  # Force resolution of dependencies
+        run: npm install
 
       - name: Build
-        run: CI=true npm run build
+        run: npm run build
 
       - name: Upload Build Artifacts
         uses: actions/upload-artifact@v4
@@ -73,12 +75,16 @@ jobs:
 
   deploy:
     needs: build
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+      - name: Download Build Artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: build-output
+          path: build
 
-      # Deploy your app here (e.g., to Firebase, AWS, etc.)
-      - name: Deploy to Hosting Service
+      - name: Deploy
         run: |
-          echo "Deploying to hosting service..."  # Replace with your actual deploy script
+          echo "Deploying to production..."
+          # Add your deployment commands here
