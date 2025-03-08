@@ -25,6 +25,7 @@ import {
   Check,
   AlertCircle,
 } from "lucide-react";
+import PaymentGatewaySettings from "@/components/admin/PaymentGatewaySettings";
 import { words } from "@/data/words";
 import {
   Dialog,
@@ -237,7 +238,7 @@ export default function ParentDashboard() {
           onValueChange={setActiveTab}
           className="space-y-6"
         >
-          <TabsList className="grid grid-cols-4 w-full max-w-2xl mx-auto">
+          <TabsList className="grid grid-cols-5 w-full max-w-3xl mx-auto">
             <TabsTrigger value="progress">
               <BarChart2 className="h-4 w-4 mr-2" />
               Progress
@@ -253,6 +254,10 @@ export default function ParentDashboard() {
             <TabsTrigger value="settings">
               <Settings className="h-4 w-4 mr-2" />
               Settings
+            </TabsTrigger>
+            <TabsTrigger value="payment-config">
+              <CreditCard className="h-4 w-4 mr-2" />
+              Payment Config
             </TabsTrigger>
           </TabsList>
 
@@ -589,6 +594,14 @@ export default function ParentDashboard() {
                 </div>
               </CardContent>
             </Card>
+          </TabsContent>
+
+          <TabsContent value="payment-config" className="space-y-6">
+            <div className="bg-white rounded-lg shadow">
+              <div className="p-1">
+                <PaymentGatewaySettings />
+              </div>
+            </div>
           </TabsContent>
 
           <TabsContent value="settings" className="space-y-6">
