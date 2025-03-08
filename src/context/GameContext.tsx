@@ -7,6 +7,8 @@ import {
 } from "react";
 import { Word, GameProgress, UserProfile } from "@/types/game";
 import { words } from "@/data/words";
+import { useAuth } from "@/context/AuthContext";
+import { supabase } from "@/lib/supabase";
 
 interface GameContextType {
   currentUser: UserProfile | null;
@@ -39,51 +41,199 @@ interface GameProviderProps {
 }
 
 export const GameProvider = ({ children }: GameProviderProps) => {
+  const { user } = useAuth();
   const [currentUser, setCurrentUser] = useState<UserProfile | null>(null);
   const [gameProgress, setGameProgress] = useState<GameProgress | null>(null);
   const [currentWord, setCurrentWord] = useState<Word | null>(null);
   const [isParentMode, setIsParentMode] = useState(false);
+  const [isLoadingProgress, setIsLoadingProgress] = useState(true);
 
-  // Initialize with demo user and progress
+  // Initialize user and progress based on authentication
   useEffect(() => {
-    const demoUser: UserProfile = {
-      id: "demo-child",
-      name: "Demo Child",
-      isChild: true,
-      avatarUrl: "https://api.dicebear.com/7.x/avataaars/svg?seed=demo-child",
-    };
+    const initializeUser = async () => {
+      setIsLoadingProgress(true);
 
-    const demoProgress: GameProgress = {
-      userId: demoUser.id,
-      completedWords: [],
-      accuracy: {},
-      level: 1,
-      badges: [],
-      lastPlayed: new Date(),
-    };
+      if (user) {
+        // Convert auth user to game user profile
+        const gameUser: UserProfile = {
+          id: user.id,
+          name: user.name,
+          isChild: !user.isParent,
+          avatarUrl: user.avatarUrl,
+        };
 
-    setCurrentUser(demoUser);
-    setGameProgress(demoProgress);
+        setCurrentUser(gameUser);
 
-    // Load from localStorage if available
-    const savedProgress = localStorage.getItem("gameProgress");
-    if (savedProgress) {
-      try {
-        const parsed = JSON.parse(savedProgress);
-        parsed.lastPlayed = new Date(parsed.lastPlayed);
-        setGameProgress(parsed);
-      } catch (e) {
-        console.error("Failed to parse saved progress", e);
+        // Set parent mode based on user type
+        if (user.isParent) {
+          setIsParentMode(true);
+        }
+
+        // Load progress from database or localStorage
+        try {
+          if (supabase) {
+            // Try to load from Supabase first
+            const { data, error } = await supabase
+              .from("game_progress")
+              .select("*")
+              .eq("user_id", user.id)
+              .single();
+
+            if (error && error.code !== "PGRST116") {
+              // PGRST116 is "not found"
+              console.error("Error fetching game progress:", error);
+            }
+
+            if (data) {
+              // Convert database format to app format
+              const progress: GameProgress = {
+                userId: data.user_id,
+                completedWords: data.completed_words,
+                accuracy: data.accuracy,
+                level: data.level,
+                badges: data.badges,
+                lastPlayed: new Date(data.last_played),
+              };
+
+              setGameProgress(progress);
+            } else {
+              // No progress in database, create new progress
+              const newProgress: GameProgress = {
+                userId: user.id,
+                completedWords: [],
+                accuracy: {},
+                level: 1,
+                badges: [],
+                lastPlayed: new Date(),
+              };
+
+              setGameProgress(newProgress);
+            }
+          } else {
+            // Fallback to localStorage
+            const savedProgress = localStorage.getItem(
+              `gameProgress_${user.id}`,
+            );
+            if (savedProgress) {
+              const parsed = JSON.parse(savedProgress);
+              parsed.lastPlayed = new Date(parsed.lastPlayed);
+              setGameProgress(parsed);
+            } else {
+              // No saved progress, create new
+              const newProgress: GameProgress = {
+                userId: user.id,
+                completedWords: [],
+                accuracy: {},
+                level: 1,
+                badges: [],
+                lastPlayed: new Date(),
+              };
+
+              setGameProgress(newProgress);
+            }
+          }
+        } catch (e) {
+          console.error("Failed to load game progress:", e);
+          // Create default progress
+          const newProgress: GameProgress = {
+            userId: user.id,
+            completedWords: [],
+            accuracy: {},
+            level: 1,
+            badges: [],
+            lastPlayed: new Date(),
+          };
+
+          setGameProgress(newProgress);
+        }
+      } else {
+        // No authenticated user, use demo user
+        const demoUser: UserProfile = {
+          id: "demo-child",
+          name: "Demo Child",
+          isChild: true,
+          avatarUrl:
+            "https://api.dicebear.com/7.x/avataaars/svg?seed=demo-child",
+        };
+
+        const demoProgress: GameProgress = {
+          userId: demoUser.id,
+          completedWords: [],
+          accuracy: {},
+          level: 1,
+          badges: [],
+          lastPlayed: new Date(),
+        };
+
+        setCurrentUser(demoUser);
+        setGameProgress(demoProgress);
+
+        // Load demo progress from localStorage if available
+        const savedProgress = localStorage.getItem("gameProgress");
+        if (savedProgress) {
+          try {
+            const parsed = JSON.parse(savedProgress);
+            parsed.lastPlayed = new Date(parsed.lastPlayed);
+            setGameProgress(parsed);
+          } catch (e) {
+            console.error("Failed to parse saved progress", e);
+          }
+        }
       }
-    }
-  }, []);
 
-  // Save progress to localStorage when it changes
+      setIsLoadingProgress(false);
+    };
+
+    initializeUser();
+  }, [user]);
+
+  // Save progress when it changes
   useEffect(() => {
-    if (gameProgress) {
-      localStorage.setItem("gameProgress", JSON.stringify(gameProgress));
+    if (gameProgress && !isLoadingProgress) {
+      const saveProgress = async () => {
+        try {
+          if (supabase && user) {
+            // Save to Supabase
+            const { error } = await supabase.from("game_progress").upsert(
+              {
+                user_id: gameProgress.userId,
+                completed_words: gameProgress.completedWords,
+                accuracy: gameProgress.accuracy,
+                level: gameProgress.level,
+                badges: gameProgress.badges,
+                last_played: gameProgress.lastPlayed.toISOString(),
+              },
+              { onConflict: "user_id" },
+            );
+
+            if (error) {
+              console.error("Error saving game progress:", error);
+              // Fallback to localStorage
+              localStorage.setItem(
+                `gameProgress_${gameProgress.userId}`,
+                JSON.stringify(gameProgress),
+              );
+            }
+          } else {
+            // Save to localStorage
+            const storageKey = user
+              ? `gameProgress_${user.id}`
+              : "gameProgress";
+            localStorage.setItem(storageKey, JSON.stringify(gameProgress));
+          }
+        } catch (e) {
+          console.error("Failed to save game progress:", e);
+          // Always try localStorage as fallback
+          localStorage.setItem(
+            `gameProgress_${gameProgress.userId}`,
+            JSON.stringify(gameProgress),
+          );
+        }
+      };
+
+      saveProgress();
     }
-  }, [gameProgress]);
+  }, [gameProgress, isLoadingProgress, user]);
 
   const updateProgress = (wordId: string, isCorrect: boolean) => {
     if (!gameProgress || !currentUser) return;
