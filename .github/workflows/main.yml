@@ -21,7 +21,7 @@ jobs:
       - name: Install Dependencies
         run: |
           npm install --force  # Force resolution of dependencies
-          npm install --save-dev @testing-library/react @testing-library/jest-dom react-scripts
+          npm install --save-dev @testing-library/react @testing-library/jest-dom react-scripts ts-node  # Install ts-node
 
       # Simple Test: Test if Jest is working
       - name: Simple Test to Check Test Functionality
