@@ -1,10 +1,20 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useGame } from "@/context/GameContext";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   ArrowLeft,
   BarChart2,
@@ -12,15 +22,89 @@ import {
   Users,
   CreditCard,
   Plus,
+  Check,
+  AlertCircle,
 } from "lucide-react";
 import { words } from "@/data/words";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+  DialogFooter,
+  DialogDescription,
+} from "@/components/ui/dialog";
+import { Checkbox } from "@/components/ui/checkbox";
 
 export default function ParentDashboard() {
-  const { currentUser, gameProgress, toggleParentMode } = useGame();
+  const { currentUser, gameProgress, toggleParentMode, setCurrentUser } =
+    useGame();
   const [activeTab, setActiveTab] = useState("progress");
+  const [timeLimit, setTimeLimit] = useState(30);
+  const [difficulty, setDifficulty] = useState("adaptive");
+  const [soundEnabled, setSoundEnabled] = useState(true);
+  const [childName, setChildName] = useState(
+    currentUser?.name || "Young Learner",
+  );
+  const [showSubscribeDialog, setShowSubscribeDialog] = useState(false);
+  const [selectedPlan, setSelectedPlan] = useState("");
+  const [showChallengeDialog, setShowChallengeDialog] = useState(false);
+  const [challengeWords, setChallengeWords] = useState<string[]>([]);
+  const [challengeName, setChallengeName] = useState("");
+  const [challenges, setChallenges] = useState<
+    { name: string; words: string[] }[]
+  >([]);
+  const [showSuccessMessage, setShowSuccessMessage] = useState("");
+
+  // Initialize child name when user changes
+  useEffect(() => {
+    if (currentUser) {
+      setChildName(currentUser.name || "Young Learner");
+    }
+  }, [currentUser]);
 
   const handleBackToChildMode = () => {
     toggleParentMode();
+  };
+
+  const handleSaveSettings = () => {
+    // In a real app, this would save to a database
+    // For now, we'll just update the UI and show a success message
+    setShowSuccessMessage("Settings saved successfully!");
+    setTimeout(() => setShowSuccessMessage(""), 3000);
+
+    // Update child name
+    if (currentUser) {
+      setCurrentUser({
+        ...currentUser,
+        name: childName,
+      });
+    }
+  };
+
+  const handleCreateChallenge = () => {
+    if (challengeName && challengeWords.length > 0) {
+      setChallenges([
+        ...challenges,
+        {
+          name: challengeName,
+          words: challengeWords,
+        },
+      ]);
+      setShowChallengeDialog(false);
+      setChallengeName("");
+      setChallengeWords([]);
+      setShowSuccessMessage("Challenge created successfully!");
+      setTimeout(() => setShowSuccessMessage(""), 3000);
+    }
+  };
+
+  const handleSubscribe = () => {
+    // In a real app, this would process payment
+    setShowSubscribeDialog(false);
+    setShowSuccessMessage(`Subscribed to ${selectedPlan} plan successfully!`);
+    setTimeout(() => setShowSuccessMessage(""), 3000);
   };
 
   // Calculate category progress
@@ -84,6 +168,13 @@ export default function ParentDashboard() {
   return (
     <div className="min-h-screen bg-gray-50 p-4">
       <div className="container max-w-6xl mx-auto">
+        {showSuccessMessage && (
+          <div className="fixed top-4 right-4 bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded z-50 flex items-center shadow-md">
+            <Check className="h-5 w-5 mr-2" />
+            {showSuccessMessage}
+          </div>
+        )}
+
         <div className="flex justify-between items-center mb-8">
           <div className="flex items-center gap-4">
             <Button variant="ghost" onClick={handleBackToChildMode}>
@@ -298,7 +389,9 @@ export default function ParentDashboard() {
                 <p className="mb-4">
                   Create a personalized learning challenge for your child.
                 </p>
-                <Button>Create New Challenge</Button>
+                <Button onClick={() => setShowChallengeDialog(true)}>
+                  Create New Challenge
+                </Button>
               </CardContent>
             </Card>
 
@@ -307,9 +400,34 @@ export default function ParentDashboard() {
                 <CardTitle>Assigned Challenges</CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-muted-foreground">
-                  No challenges assigned yet.
-                </p>
+                {challenges.length > 0 ? (
+                  <div className="space-y-4">
+                    {challenges.map((challenge, index) => (
+                      <div key={index} className="p-4 border rounded-md">
+                        <div className="flex justify-between items-center mb-2">
+                          <h3 className="font-medium">{challenge.name}</h3>
+                          <Badge variant="outline">
+                            {challenge.words.length} words
+                          </Badge>
+                        </div>
+                        <div className="flex flex-wrap gap-2 mb-3">
+                          {challenge.words.map((word, idx) => (
+                            <Badge key={idx} variant="secondary">
+                              {word}
+                            </Badge>
+                          ))}
+                        </div>
+                        <Button variant="outline" size="sm">
+                          View Details
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-muted-foreground">
+                    No challenges assigned yet.
+                  </p>
+                )}
               </CardContent>
             </Card>
           </TabsContent>
@@ -339,41 +457,23 @@ export default function ParentDashboard() {
                       </div>
                       <ul className="space-y-2 mb-4">
                         <li className="flex items-center gap-2">
-                          <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            width="16"
-                            height="16"
-                            viewBox="0 0 24 24"
-                            fill="none"
-                            stroke="currentColor"
-                            strokeWidth="2"
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            className="text-green-500"
-                          >
-                            <polyline points="20 6 9 17 4 12" />
-                          </svg>
+                          <Check className="h-4 w-4 text-green-500" />
                           All animals and cars
                         </li>
                         <li className="flex items-center gap-2">
-                          <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            width="16"
-                            height="16"
-                            viewBox="0 0 24 24"
-                            fill="none"
-                            stroke="currentColor"
-                            strokeWidth="2"
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            className="text-green-500"
-                          >
-                            <polyline points="20 6 9 17 4 12" />
-                          </svg>
+                          <Check className="h-4 w-4 text-green-500" />
                           Progress tracking
                         </li>
                       </ul>
-                      <Button className="w-full">Subscribe</Button>
+                      <Button
+                        className="w-full"
+                        onClick={() => {
+                          setSelectedPlan("Basic");
+                          setShowSubscribeDialog(true);
+                        }}
+                      >
+                        Subscribe
+                      </Button>
                     </CardContent>
                   </Card>
 
@@ -388,58 +488,27 @@ export default function ParentDashboard() {
                       </div>
                       <ul className="space-y-2 mb-4">
                         <li className="flex items-center gap-2">
-                          <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            width="16"
-                            height="16"
-                            viewBox="0 0 24 24"
-                            fill="none"
-                            stroke="currentColor"
-                            strokeWidth="2"
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            className="text-green-500"
-                          >
-                            <polyline points="20 6 9 17 4 12" />
-                          </svg>
+                          <Check className="h-4 w-4 text-green-500" />
                           Up to 3 child profiles
                         </li>
                         <li className="flex items-center gap-2">
-                          <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            width="16"
-                            height="16"
-                            viewBox="0 0 24 24"
-                            fill="none"
-                            stroke="currentColor"
-                            strokeWidth="2"
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            className="text-green-500"
-                          >
-                            <polyline points="20 6 9 17 4 12" />
-                          </svg>
+                          <Check className="h-4 w-4 text-green-500" />
                           All categories
                         </li>
                         <li className="flex items-center gap-2">
-                          <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            width="16"
-                            height="16"
-                            viewBox="0 0 24 24"
-                            fill="none"
-                            stroke="currentColor"
-                            strokeWidth="2"
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            className="text-green-500"
-                          >
-                            <polyline points="20 6 9 17 4 12" />
-                          </svg>
+                          <Check className="h-4 w-4 text-green-500" />
                           Custom challenges
                         </li>
                       </ul>
-                      <Button className="w-full">Subscribe</Button>
+                      <Button
+                        className="w-full"
+                        onClick={() => {
+                          setSelectedPlan("Family");
+                          setShowSubscribeDialog(true);
+                        }}
+                      >
+                        Subscribe
+                      </Button>
                     </CardContent>
                   </Card>
 
@@ -454,58 +523,27 @@ export default function ParentDashboard() {
                       </div>
                       <ul className="space-y-2 mb-4">
                         <li className="flex items-center gap-2">
-                          <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            width="16"
-                            height="16"
-                            viewBox="0 0 24 24"
-                            fill="none"
-                            stroke="currentColor"
-                            strokeWidth="2"
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            className="text-green-500"
-                          >
-                            <polyline points="20 6 9 17 4 12" />
-                          </svg>
+                          <Check className="h-4 w-4 text-green-500" />
                           Unlimited profiles
                         </li>
                         <li className="flex items-center gap-2">
-                          <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            width="16"
-                            height="16"
-                            viewBox="0 0 24 24"
-                            fill="none"
-                            stroke="currentColor"
-                            strokeWidth="2"
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            className="text-green-500"
-                          >
-                            <polyline points="20 6 9 17 4 12" />
-                          </svg>
+                          <Check className="h-4 w-4 text-green-500" />
                           All features
                         </li>
                         <li className="flex items-center gap-2">
-                          <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            width="16"
-                            height="16"
-                            viewBox="0 0 24 24"
-                            fill="none"
-                            stroke="currentColor"
-                            strokeWidth="2"
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            className="text-green-500"
-                          >
-                            <polyline points="20 6 9 17 4 12" />
-                          </svg>
+                          <Check className="h-4 w-4 text-green-500" />
                           Priority support
                         </li>
                       </ul>
-                      <Button className="w-full">Subscribe</Button>
+                      <Button
+                        className="w-full"
+                        onClick={() => {
+                          setSelectedPlan("Premium");
+                          setShowSubscribeDialog(true);
+                        }}
+                      >
+                        Subscribe
+                      </Button>
                     </CardContent>
                   </Card>
                 </div>
@@ -527,10 +565,13 @@ export default function ParentDashboard() {
                     </p>
                   </div>
                   <div className="flex items-center gap-2">
-                    <input
+                    <Input
                       type="number"
-                      className="w-16 h-10 rounded-md border border-input bg-background px-3 py-2 text-sm"
-                      defaultValue={30}
+                      className="w-16 h-10"
+                      value={timeLimit}
+                      onChange={(e) =>
+                        setTimeLimit(parseInt(e.target.value) || 30)
+                      }
                       min={5}
                       max={120}
                     />
@@ -545,12 +586,17 @@ export default function ParentDashboard() {
                       Adjust the game difficulty
                     </p>
                   </div>
-                  <select className="h-10 rounded-md border border-input bg-background px-3 py-2 text-sm">
-                    <option>Easy</option>
-                    <option>Medium</option>
-                    <option>Hard</option>
-                    <option selected>Adaptive</option>
-                  </select>
+                  <Select value={difficulty} onValueChange={setDifficulty}>
+                    <SelectTrigger className="w-[180px]">
+                      <SelectValue placeholder="Select difficulty" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="easy">Easy</SelectItem>
+                      <SelectItem value="medium">Medium</SelectItem>
+                      <SelectItem value="hard">Hard</SelectItem>
+                      <SelectItem value="adaptive">Adaptive</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
 
                 <div className="flex justify-between items-center">
@@ -560,17 +606,21 @@ export default function ParentDashboard() {
                       Enable or disable game sounds
                     </p>
                   </div>
-                  <div className="flex h-6 items-center">
-                    <input
+                  <div className="flex items-center space-x-2">
+                    <Switch
                       id="sound-toggle"
-                      type="checkbox"
-                      className="h-4 w-4 rounded border-gray-300"
-                      defaultChecked
+                      checked={soundEnabled}
+                      onCheckedChange={setSoundEnabled}
                     />
+                    <Label htmlFor="sound-toggle">
+                      {soundEnabled ? "On" : "Off"}
+                    </Label>
                   </div>
                 </div>
 
-                <Button className="w-full mt-4">Save Settings</Button>
+                <Button className="w-full mt-4" onClick={handleSaveSettings}>
+                  Save Settings
+                </Button>
               </CardContent>
             </Card>
 
@@ -590,11 +640,12 @@ export default function ParentDashboard() {
                       className="w-full h-full object-cover"
                     />
                   </div>
-                  <div>
-                    <input
+                  <div className="flex-1">
+                    <Input
                       type="text"
-                      className="w-full h-10 rounded-md border border-input bg-background px-3 py-2 text-sm mb-2"
-                      defaultValue={currentUser?.name || "Young Learner"}
+                      className="mb-2"
+                      value={childName}
+                      onChange={(e) => setChildName(e.target.value)}
                       placeholder="Child's name"
                     />
                     <Button variant="outline" size="sm">
@@ -603,12 +654,121 @@ export default function ParentDashboard() {
                   </div>
                 </div>
 
-                <Button className="w-full">Update Profile</Button>
+                <Button className="w-full" onClick={handleSaveSettings}>
+                  Update Profile
+                </Button>
               </CardContent>
             </Card>
           </TabsContent>
         </Tabs>
       </div>
+
+      {/* Subscribe Dialog */}
+      <Dialog open={showSubscribeDialog} onOpenChange={setShowSubscribeDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Subscribe to {selectedPlan} Plan</DialogTitle>
+            <DialogDescription>
+              Enter your payment details to subscribe to the {selectedPlan}{" "}
+              plan.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="card-name">Name on Card</Label>
+              <Input id="card-name" placeholder="John Smith" />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="card-number">Card Number</Label>
+              <Input id="card-number" placeholder="4242 4242 4242 4242" />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="expiry">Expiry Date</Label>
+                <Input id="expiry" placeholder="MM/YY" />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="cvc">CVC</Label>
+                <Input id="cvc" placeholder="123" />
+              </div>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setShowSubscribeDialog(false)}
+            >
+              Cancel
+            </Button>
+            <Button onClick={handleSubscribe}>Subscribe</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Challenge Creation Dialog */}
+      <Dialog open={showChallengeDialog} onOpenChange={setShowChallengeDialog}>
+        <DialogContent className="max-w-3xl">
+          <DialogHeader>
+            <DialogTitle>Create Custom Challenge</DialogTitle>
+            <DialogDescription>
+              Select words to include in your custom challenge for your child.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="challenge-name">Challenge Name</Label>
+              <Input
+                id="challenge-name"
+                placeholder="Animal Adventure"
+                value={challengeName}
+                onChange={(e) => setChallengeName(e.target.value)}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label>Select Words</Label>
+              <div className="border rounded-md p-4 max-h-60 overflow-y-auto">
+                <div className="grid grid-cols-2 gap-2">
+                  {words.map((word) => (
+                    <div key={word.id} className="flex items-center space-x-2">
+                      <Checkbox
+                        id={word.id}
+                        checked={challengeWords.includes(word.word)}
+                        onCheckedChange={(checked) => {
+                          if (checked) {
+                            setChallengeWords([...challengeWords, word.word]);
+                          } else {
+                            setChallengeWords(
+                              challengeWords.filter((w) => w !== word.word),
+                            );
+                          }
+                        }}
+                      />
+                      <Label htmlFor={word.id} className="text-sm">
+                        {word.word} ({word.category}, Level {word.difficulty})
+                      </Label>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setShowChallengeDialog(false)}
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={handleCreateChallenge}
+              disabled={!challengeName || challengeWords.length === 0}
+            >
+              Create Challenge
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
