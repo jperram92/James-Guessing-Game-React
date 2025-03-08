@@ -1,7 +1,6 @@
 module.exports = {
-  // other Jest settings...
   moduleNameMapper: {
-    "^@/(.*)$": "<rootDir>/src/$1",  // Map the "@" alias to the "src" directory
+    "^@/(.*)$": "<rootDir>/src/$1",  // Adjust path alias for your project
   },
   transform: {
     '^.+\\.(ts|tsx)$': 'ts-jest',  // Use ts-jest for TypeScript files
@@ -14,11 +13,10 @@ module.exports = {
         sourceMap: true,
         module: 'ESNext',
         target: 'ES2020',
-        // You may want to ensure `allowImportingTsExtensions` is not included in this configuration
       },
     },
   },
-  testEnvironment: 'jsdom',  // Use jsdom for browser-like testing environment
-  preset: 'ts-jest',  // Make sure you're using ts-jest preset for TypeScript
-  moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx', 'json', 'node'],
+  testEnvironment: 'jsdom',  // Simulate a browser environment
+  preset: 'ts-jest',  // Ensure that ts-jest is used as the preset
+  moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx', 'json', 'node'],  // Add the appropriate extensions
 };
