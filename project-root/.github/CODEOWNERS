@@ -1,0 +1,15 @@
+project-root
+├── .github
+│   └── workflows
+│       ├── test.yml
+│       └── approval.yml
+├── .github
+│   └── CODEOWNERS
+│       * @jperram92
+├── src
+│   └── components
+│       └── index.ts
+├── tests
+│   └── index.test.ts
+├── package.json
+└── README.md
