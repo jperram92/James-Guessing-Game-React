@@ -49,6 +49,14 @@ export default function ParentDashboard() {
   );
   const [showSubscribeDialog, setShowSubscribeDialog] = useState(false);
   const [selectedPlan, setSelectedPlan] = useState("");
+  const [isProcessingPayment, setIsProcessingPayment] = useState(false);
+  const [paymentError, setPaymentError] = useState("");
+  const [cardDetails, setCardDetails] = useState({
+    cardName: "",
+    cardNumber: "",
+    expiryDate: "",
+    cvc: "",
+  });
   const [showChallengeDialog, setShowChallengeDialog] = useState(false);
   const [challengeWords, setChallengeWords] = useState<string[]>([]);
   const [challengeName, setChallengeName] = useState("");
@@ -100,11 +108,43 @@ export default function ParentDashboard() {
     }
   };
 
-  const handleSubscribe = () => {
-    // In a real app, this would process payment
-    setShowSubscribeDialog(false);
-    setShowSuccessMessage(`Subscribed to ${selectedPlan} plan successfully!`);
-    setTimeout(() => setShowSuccessMessage(""), 3000);
+  const handleSubscribe = async () => {
+    try {
+      setIsProcessingPayment(true);
+      setPaymentError("");
+
+      // Import payment processor dynamically to avoid loading it unnecessarily
+      const { processPayment, getSubscriptionPrice } = await import(
+        "@/lib/payment"
+      );
+
+      // Process the payment
+      const result = await processPayment({
+        ...cardDetails,
+        plan: selectedPlan,
+        amount: getSubscriptionPrice(selectedPlan),
+      });
+
+      if (result.success) {
+        // Payment successful
+        setShowSubscribeDialog(false);
+        setShowSuccessMessage(
+          `Subscribed to ${selectedPlan} plan successfully! Transaction ID: ${result.transactionId}`,
+        );
+        setTimeout(() => setShowSuccessMessage(""), 5000);
+
+        // In a real app, you would update the user's subscription status in your database
+        // For demo purposes, we'll just update the UI
+      } else {
+        // Payment failed
+        setPaymentError(result.error || "Payment processing failed");
+      }
+    } catch (error) {
+      setPaymentError("An unexpected error occurred");
+      console.error("Payment error:", error);
+    } finally {
+      setIsProcessingPayment(false);
+    }
   };
 
   // Calculate category progress
@@ -676,31 +716,109 @@ export default function ParentDashboard() {
           <div className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="card-name">Name on Card</Label>
-              <Input id="card-name" placeholder="John Smith" />
+              <Input
+                id="card-name"
+                placeholder="John Smith"
+                value={cardDetails.cardName}
+                onChange={(e) =>
+                  setCardDetails({ ...cardDetails, cardName: e.target.value })
+                }
+              />
             </div>
             <div className="space-y-2">
               <Label htmlFor="card-number">Card Number</Label>
-              <Input id="card-number" placeholder="4242 4242 4242 4242" />
+              <Input
+                id="card-number"
+                placeholder="4242 4242 4242 4242"
+                value={cardDetails.cardNumber}
+                onChange={(e) =>
+                  setCardDetails({ ...cardDetails, cardNumber: e.target.value })
+                }
+              />
+              <p className="text-xs text-muted-foreground mt-1">
+                For testing: Use a card number ending with 4242 for success
+              </p>
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="expiry">Expiry Date</Label>
-                <Input id="expiry" placeholder="MM/YY" />
+                <Input
+                  id="expiry"
+                  placeholder="MM/YY"
+                  value={cardDetails.expiryDate}
+                  onChange={(e) =>
+                    setCardDetails({
+                      ...cardDetails,
+                      expiryDate: e.target.value,
+                    })
+                  }
+                />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="cvc">CVC</Label>
-                <Input id="cvc" placeholder="123" />
+                <Input
+                  id="cvc"
+                  placeholder="123"
+                  value={cardDetails.cvc}
+                  onChange={(e) =>
+                    setCardDetails({ ...cardDetails, cvc: e.target.value })
+                  }
+                />
               </div>
             </div>
+            {paymentError && (
+              <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
+                <AlertCircle className="h-4 w-4 inline mr-2" />
+                {paymentError}
+              </div>
+            )}
           </div>
           <DialogFooter>
             <Button
               variant="outline"
               onClick={() => setShowSubscribeDialog(false)}
+              disabled={isProcessingPayment}
             >
               Cancel
             </Button>
-            <Button onClick={handleSubscribe}>Subscribe</Button>
+            <Button
+              onClick={handleSubscribe}
+              disabled={
+                isProcessingPayment ||
+                !cardDetails.cardName ||
+                !cardDetails.cardNumber ||
+                !cardDetails.expiryDate ||
+                !cardDetails.cvc
+              }
+            >
+              {isProcessingPayment ? (
+                <>
+                  <svg
+                    className="animate-spin -ml-1 mr-2 h-4 w-4 text-white"
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                  >
+                    <circle
+                      className="opacity-25"
+                      cx="12"
+                      cy="12"
+                      r="10"
+                      stroke="currentColor"
+                      strokeWidth="4"
+                    ></circle>
+                    <path
+                      className="opacity-75"
+                      fill="currentColor"
+                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                    ></path>
+                  </svg>
+                  Processing...
+                </>
+              ) : (
+                "Subscribe"
+              )}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
