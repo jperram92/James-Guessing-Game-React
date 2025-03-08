@@ -1,6 +1,8 @@
 name: Approval Required
 
 on:
+  push:
+    branches: [ main ]  # Add this
   pull_request:
     types: [opened, synchronize, reopened]
 
