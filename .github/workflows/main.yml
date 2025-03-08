@@ -1,0 +1,33 @@
+name: Approval Required
+
+on:
+  push:
+    branches: [ main ]  # Add this
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+jobs:
+  approval:
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
+      contents: write
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Verify Pull Request Review
+      uses: reviewdog/action-suggester@v1
+      with:
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+        
+    - name: Block Merge on Approval
+      uses: softprops/action-gh-release@v1
+      if: github.event.pull_request.user.login != 'jperram92'
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        prerelease: true
+        draft: false
+        body: |
+          This PR requires approval from @jperram92
