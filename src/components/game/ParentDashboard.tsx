@@ -37,6 +37,8 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import { Checkbox } from "@/components/ui/checkbox";
+import PayPalButton from '../PayPalButton';  // Add this import at the top
+import { PayPalScriptProvider, PayPalButtons } from "@paypal/react-paypal-js";
 
 export default function ParentDashboard() {
   const { currentUser, gameProgress, toggleParentMode, setCurrentUser } =
@@ -480,117 +482,45 @@ export default function ParentDashboard() {
           <TabsContent value="subscription" className="space-y-6">
             <Card>
               <CardHeader>
-                <CardTitle>Current Plan</CardTitle>
+                <CardTitle>Payment Options</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="p-4 border rounded-md mb-4">
-                  <Badge>Free Plan</Badge>
-                  <p className="mt-2">
-                    Access to basic features and limited words.
-                  </p>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <Card className="border-2 border-primary">
-                    <CardHeader className="bg-primary/10">
-                      <CardTitle className="text-center">Basic</CardTitle>
-                    </CardHeader>
-                    <CardContent className="p-4">
-                      <div className="text-center mb-4">
-                        <span className="text-3xl font-bold">$4.99</span>
-                        <span className="text-muted-foreground">/month</span>
-                      </div>
-                      <ul className="space-y-2 mb-4">
-                        <li className="flex items-center gap-2">
-                          <Check className="h-4 w-4 text-green-500" />
-                          All animals and cars
-                        </li>
-                        <li className="flex items-center gap-2">
-                          <Check className="h-4 w-4 text-green-500" />
-                          Progress tracking
-                        </li>
-                      </ul>
-                      <Button
-                        className="w-full"
-                        onClick={() => {
-                          setSelectedPlan("Basic");
-                          setShowSubscribeDialog(true);
+                <div className="space-y-4">
+                  <div className="p-4 border rounded-md">
+                    <h3 className="font-medium mb-2">Premium Subscription - $10/month</h3>
+                    <PayPalScriptProvider 
+                      options={{
+                        "client-id": import.meta.env.VITE_PAYPAL_CLIENT_ID,
+                        "currency": "USD",
+                      }}
+                    >
+                      <PayPalButtons
+                        style={{ layout: "vertical" }}
+                        createOrder={(data, actions) => {
+                          return actions.order.create({
+                            purchase_units: [{
+                              description: "Premium Subscription",
+                              amount: {
+                                value: "10.00"
+                              }
+                            }]
+                          });
                         }}
-                      >
-                        Subscribe
-                      </Button>
-                    </CardContent>
-                  </Card>
-
-                  <Card className="border-2 border-primary">
-                    <CardHeader className="bg-primary/10">
-                      <CardTitle className="text-center">Family</CardTitle>
-                    </CardHeader>
-                    <CardContent className="p-4">
-                      <div className="text-center mb-4">
-                        <span className="text-3xl font-bold">$9.99</span>
-                        <span className="text-muted-foreground">/month</span>
-                      </div>
-                      <ul className="space-y-2 mb-4">
-                        <li className="flex items-center gap-2">
-                          <Check className="h-4 w-4 text-green-500" />
-                          Up to 3 child profiles
-                        </li>
-                        <li className="flex items-center gap-2">
-                          <Check className="h-4 w-4 text-green-500" />
-                          All categories
-                        </li>
-                        <li className="flex items-center gap-2">
-                          <Check className="h-4 w-4 text-green-500" />
-                          Custom challenges
-                        </li>
-                      </ul>
-                      <Button
-                        className="w-full"
-                        onClick={() => {
-                          setSelectedPlan("Family");
-                          setShowSubscribeDialog(true);
+                        onApprove={async (data, actions) => {
+                          if (actions.order) {
+                            const details = await actions.order.capture();
+                            console.log("Payment successful!", details);
+                            // Handle successful payment here
+                            setShowSuccessMessage("Payment successful! Your subscription is now active.");
+                          }
                         }}
-                      >
-                        Subscribe
-                      </Button>
-                    </CardContent>
-                  </Card>
-
-                  <Card className="border-2 border-primary">
-                    <CardHeader className="bg-primary/10">
-                      <CardTitle className="text-center">Premium</CardTitle>
-                    </CardHeader>
-                    <CardContent className="p-4">
-                      <div className="text-center mb-4">
-                        <span className="text-3xl font-bold">$14.99</span>
-                        <span className="text-muted-foreground">/month</span>
-                      </div>
-                      <ul className="space-y-2 mb-4">
-                        <li className="flex items-center gap-2">
-                          <Check className="h-4 w-4 text-green-500" />
-                          Unlimited profiles
-                        </li>
-                        <li className="flex items-center gap-2">
-                          <Check className="h-4 w-4 text-green-500" />
-                          All features
-                        </li>
-                        <li className="flex items-center gap-2">
-                          <Check className="h-4 w-4 text-green-500" />
-                          Priority support
-                        </li>
-                      </ul>
-                      <Button
-                        className="w-full"
-                        onClick={() => {
-                          setSelectedPlan("Premium");
-                          setShowSubscribeDialog(true);
+                        onError={(err) => {
+                          console.error("PayPal Error:", err);
+                          setPaymentError("Payment failed. Please try again.");
                         }}
-                      >
-                        Subscribe
-                      </Button>
-                    </CardContent>
-                  </Card>
+                      />
+                    </PayPalScriptProvider>
+                  </div>
                 </div>
               </CardContent>
             </Card>
