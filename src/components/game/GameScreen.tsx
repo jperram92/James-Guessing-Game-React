@@ -89,7 +89,7 @@ export default function GameScreen(
 
   // Calculate progress percentage
   const progressPercentage = gameProgress
-    ? Math.min(100, (gameProgress.completedWords.length / 15) * 100)
+    ? Math.min(100, (gameProgress.completedWords.length / 55) * 100)
     : 0;
 
   return (
@@ -109,7 +109,7 @@ export default function GameScreen(
       <div className="mb-6">
         <div className="flex justify-between items-center mb-2">
           <span className="text-sm font-medium">Progress</span>
-          <span className="text-sm">{wordsCompleted}/15 words</span>
+          <span className="text-sm">{wordsCompleted}/55 words</span>
         </div>
         <Progress value={progressPercentage} className="h-2" />
       </div>

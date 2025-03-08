@@ -15,7 +15,7 @@ export default function CategorySelection(
   const getProgress = (category: "animals" | "cars") => {
     if (!gameProgress) return 0;
 
-    const totalWordsInCategory = category === "animals" ? 7 : 6; // Based on our data
+    const totalWordsInCategory = category === "animals" ? 28 : 27; // Based on our expanded data
     const completedInCategory = gameProgress.completedWords.filter((id) =>
       id.startsWith(category),
     ).length;
