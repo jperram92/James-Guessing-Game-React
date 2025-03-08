@@ -1,23 +1,22 @@
 module.exports = {
-    // Jest configuration
-    moduleNameMapper: {
-      // Map '@' alias to the 'src' folder
-      "^@/(.*)$": "<rootDir>/src/$1"
-    },
-    // Enable Babel transformation for module support
-    transform: {
-      '^.+\\.(js|jsx|ts|tsx)$': 'babel-jest',
-    },
-    // This is important to allow import.meta to work
-    globals: {
-      'ts-jest': {
-        tsconfig: {
-          jsx: 'react-jsx',
-          sourceMap: true,
-        },
+  // Jest configuration
+  moduleNameMapper: {
+    // Map '@' alias to the 'src' folder
+    "^@/(.*)$": "<rootDir>/src/$1",
+  },
+  // Enable Babel transformation for JS/TS files
+  transform: {
+    '^.+\\.(js|jsx|ts|tsx)$': 'ts-jest',  // Use ts-jest for TS files
+  },
+  globals: {
+    'ts-jest': {
+      tsconfig: {
+        jsx: 'react-jsx',
+        sourceMap: true,
+        module: 'ESNext',  // Ensure module resolution is ESNext
+        target: 'ES2020',
       },
     },
-    // Additional Jest configurations can go here
-    testEnvironment: 'jsdom',
-  };
-  
+  },
+  testEnvironment: 'jsdom',
+};
