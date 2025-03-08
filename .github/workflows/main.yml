@@ -22,24 +22,42 @@ jobs:
       run: npm ci
     
     - name: Run Auth Tests
-      run: npm test src/tests/AuthTest.tsx -- --coverage
+      run: npm test src/tests/AuthTest.tsx -- --coverage --watchAll=false
     
     - name: Run Game Tests
-      run: npm test src/tests/GameTest.tsx -- --coverage
+      run: npm test src/tests/GameTest.tsx -- --coverage --watchAll=false
     
     - name: Run Component Tests
-      run: npm test -- --testPathPattern=src/components/*.test.js
+      run: npm test -- --testPathPattern=src/components/*.test.js --watchAll=false
     
     - name: Upload Test Coverage
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v2
       with:
-        name: coverage
+        name: test-coverage
         path: coverage/
+        retention-days: 14
 
   build:
     needs: test
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3
+    
+    - name: Setup Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: '18.x'
+        cache: 'npm'
+        
+    - name: Install Dependencies
+      run: npm ci
+        
     - name: Build
       run: npm run build
+    
+    - name: Upload Build Artifacts
+      uses: actions/upload-artifact@v2
+      with:
+        name: build-output
+        path: build/
+        retention-days: 14
