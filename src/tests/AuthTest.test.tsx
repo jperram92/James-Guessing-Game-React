@@ -214,7 +214,6 @@ export default function AuthTest() {
                   placeholder="Test User"
                 />
               </div>
-
               <div className="flex items-center space-x-2 pt-8">
                 <input
                   type="checkbox"
@@ -222,11 +221,11 @@ export default function AuthTest() {
                   className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
                   checked={testIsParent}
                   onChange={(e) => setTestIsParent(e.target.checked)}
+                  title="Check if this is a parent account"  // Add this title
                 />
                 <Label htmlFor="test-is-parent">Is Parent Account</Label>
               </div>
             </div>
-
             <div className="grid grid-cols-2 gap-4 mt-4">
               <Button
                 onClick={testLogin}
