@@ -1,6 +1,7 @@
 module.exports = {
+  // other Jest settings...
   moduleNameMapper: {
-    "^@/(.*)$": "<rootDir>/src/$1",  // This maps '@' to the src directory
+    "^@/(.*)$": "<rootDir>/src/$1",
   },
   transform: {
     '^.+\\.(ts|tsx)$': 'ts-jest',  // Use ts-jest for TypeScript files
