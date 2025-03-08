@@ -39,6 +39,7 @@ import {
 import { Checkbox } from "@/components/ui/checkbox";
 import PayPalButton from '../PayPalButton';  // Add this import at the top
 import { PayPalScriptProvider, PayPalButtons } from "@paypal/react-paypal-js";
+import { AvatarSelector } from "@/components/AvatarSelector";
 
 export default function ParentDashboard() {
   const { currentUser, gameProgress, toggleParentMode, setCurrentUser } =
@@ -67,6 +68,7 @@ export default function ParentDashboard() {
     { name: string; words: string[] }[]
   >([]);
   const [showSuccessMessage, setShowSuccessMessage] = useState("");
+  const [showAvatarSelector, setShowAvatarSelector] = useState(false);
 
   // Initialize child name when user changes
   useEffect(() => {
@@ -207,6 +209,16 @@ export default function ParentDashboard() {
   ];
 
   const maxMinutes = Math.max(...timeSpentData.map((d) => d.minutes));
+
+  const handleAvatarChange = (newAvatarUrl: string) => {
+    if (currentUser) {
+      setCurrentUser({
+        ...currentUser,
+        avatarUrl: newAvatarUrl
+      });
+      setShowSuccessMessage("Avatar updated successfully!");
+    }
+  };
 
   return (
     <div className="min-h-screen bg-gray-50 p-4">
@@ -631,7 +643,11 @@ export default function ParentDashboard() {
                       onChange={(e) => setChildName(e.target.value)}
                       placeholder="Child's name"
                     />
-                    <Button variant="outline" size="sm">
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      onClick={() => setShowAvatarSelector(true)}
+                    >
                       Change Avatar
                     </Button>
                   </div>
@@ -830,6 +846,13 @@ export default function ParentDashboard() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <AvatarSelector
+        open={showAvatarSelector}
+        onOpenChange={setShowAvatarSelector}
+        onSelect={handleAvatarChange}
+        currentAvatar={currentUser?.avatarUrl}
+      />
     </div>
   );
 }
