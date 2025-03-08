@@ -1,33 +1,45 @@
-name: Approval Required
+name: CI/CD with Tests
 
 on:
   push:
-    branches: [ main ]  # Add this
+    branches: [ main ]
   pull_request:
     types: [opened, synchronize, reopened]
 
 jobs:
-  approval:
+  test:
     runs-on: ubuntu-latest
-    permissions:
-      pull-requests: write
-      contents: write
-    
     steps:
     - uses: actions/checkout@v3
     
-    - name: Verify Pull Request Review
-      uses: reviewdog/action-suggester@v1
+    - name: Setup Node.js
+      uses: actions/setup-node@v3
       with:
-        github_token: ${{ secrets.GITHUB_TOKEN }}
-        
-    - name: Block Merge on Approval
-      uses: softprops/action-gh-release@v1
-      if: github.event.pull_request.user.login != 'jperram92'
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        node-version: '18.x'
+        cache: 'npm'
+    
+    - name: Install Dependencies
+      run: npm ci
+    
+    - name: Run Auth Tests
+      run: npm test src/tests/AuthTest.tsx -- --coverage
+    
+    - name: Run Game Tests
+      run: npm test src/tests/GameTest.tsx -- --coverage
+    
+    - name: Run Component Tests
+      run: npm test -- --testPathPattern=src/components/*.test.js
+    
+    - name: Upload Test Coverage
+      uses: actions/upload-artifact@v3
       with:
-        prerelease: true
-        draft: false
-        body: |
-          This PR requires approval from @jperram92
+        name: coverage
+        path: coverage/
+
+  build:
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    - name: Build
+      run: npm run build
